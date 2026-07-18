@@ -19,9 +19,15 @@ import java.util.UUID;
 public class Event {
     @Id
     @UuidGenerator
-    UUID id;
+    private UUID id;
 
-    String name;
-    String venue;
-    Instant startsAt;
+    private String name;
+    private String venue;
+    private Instant startsAt;
+
+    public Event(String name, String venue, Instant startsAt) {
+        this.name = name;
+        this.venue = venue;
+        this.startsAt = startsAt;
+    }
 }
