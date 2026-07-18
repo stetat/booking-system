@@ -1,6 +1,6 @@
 package com.darkhan.booking.booking;
 
-import com.darkhan.booking.event.Seat;
+import com.darkhan.booking.seat.Seat;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

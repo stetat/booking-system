@@ -1,4 +1,4 @@
-package com.darkhan.booking.event;
+package com.darkhan.booking.seat;
 
 import java.util.UUID;
 

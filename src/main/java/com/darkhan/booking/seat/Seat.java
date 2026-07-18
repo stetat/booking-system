@@ -1,6 +1,6 @@
-package com.darkhan.booking.event;
+package com.darkhan.booking.seat;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.darkhan.booking.event.Event;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

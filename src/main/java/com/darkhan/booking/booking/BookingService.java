@@ -1,16 +1,15 @@
 package com.darkhan.booking.booking;
 
 
-import com.darkhan.booking.event.Seat;
-import com.darkhan.booking.event.SeatAlreadyBookedException;
-import com.darkhan.booking.event.SeatNotFoundException;
-import com.darkhan.booking.event.SeatRepository;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+import com.darkhan.booking.seat.Seat;
+import com.darkhan.booking.seat.SeatAlreadyBookedException;
+import com.darkhan.booking.seat.SeatNotFoundException;
+import com.darkhan.booking.seat.SeatRepository;
+
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Service

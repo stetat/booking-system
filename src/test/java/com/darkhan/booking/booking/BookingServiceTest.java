@@ -3,12 +3,14 @@ package com.darkhan.booking.booking;
 import com.darkhan.booking.TestcontainersConfiguration;
 import com.darkhan.booking.event.Event;
 import com.darkhan.booking.event.EventRepository;
-import com.darkhan.booking.event.Seat;
-import com.darkhan.booking.event.SeatRepository;
+import com.darkhan.booking.seat.Seat;
+import com.darkhan.booking.seat.SeatRepository;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -18,6 +20,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
+@Transactional
 public class BookingServiceTest {
     @Autowired
     BookingService bookingService;
