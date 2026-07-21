@@ -27,9 +27,8 @@ public class EventController {
 
     @GetMapping("/events/{eventId}/seats")
     public List<SeatResponse> getSeatsByEventId(@PathVariable UUID eventId) {
-        return seatRepository.findAll()
+        return seatRepository.findByEventId(eventId)
                 .stream()
-                .filter(seat -> seat.getEvent().getId().equals(eventId))
                 .map(SeatResponse::from)
                 .toList();
     }
