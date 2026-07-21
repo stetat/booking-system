@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS uq_booking_one_active_per_seat;

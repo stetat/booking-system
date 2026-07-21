@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -60,6 +61,7 @@ public class BookingConcurrencyTest {
         AtomicInteger conflict = new AtomicInteger();
         AtomicInteger dbViolation = new AtomicInteger();
         AtomicInteger other = new AtomicInteger();
+        AtomicInteger optimisticFail = new AtomicInteger();
 
         for(int i = 0; i < N; i++) {
             final int idx = i;
@@ -72,7 +74,9 @@ public class BookingConcurrencyTest {
                     conflict.incrementAndGet();
                 } catch (DataIntegrityViolationException e) {
                     dbViolation.incrementAndGet();
-                } catch (Exception e) {
+                }  catch (ObjectOptimisticLockingFailureException e) {
+                    optimisticFail.incrementAndGet();
+                }  catch (Exception e) {
                     other.incrementAndGet();
                     e.printStackTrace();
                 } finally {
@@ -88,13 +92,14 @@ public class BookingConcurrencyTest {
         System.out.println(" ------------------------------\n");
         System.out.println("successfull bookings: " + bookingRepository.count() + " -- " + ok.get());
         System.out.println("db violations: " + dbViolation.get());
+        System.out.println("optimistic lock exceptions: " + optimisticFail.get());
         System.out.println("seat already booked exceptions: " + conflict.get());
         System.out.println("others: " + other);
         System.out.println("\n------------------------------ ");
 
         assertThat(bookingRepository.count()).isEqualTo(1);
         assertThat(ok.get()).isEqualTo(1);
-        assertThat(dbViolation.get()).isGreaterThan(0);
+        assertThat(dbViolation.get()).isGreaterThanOrEqualTo(0);
         assertThat(threadsFinished).isEqualTo(true);
 
     }

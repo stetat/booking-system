@@ -6,7 +6,10 @@ import com.darkhan.booking.seat.SeatAlreadyBookedException;
 import com.darkhan.booking.seat.SeatNotFoundException;
 import com.darkhan.booking.seat.SeatRepository;
 
+import jakarta.persistence.LockModeType;
 import lombok.AllArgsConstructor;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +24,7 @@ public class BookingService {
 
     @Transactional
     public Booking book(UUID seatId, String userId) {
-        Seat seat = seatRepository.findById(seatId)
+        Seat seat = seatRepository.findByIdForBooking(seatId)
                 .orElseThrow(() -> new SeatNotFoundException(seatId));
 
         if(bookingRepository.existsBySeatIdAndStatusNot(seatId, BookingStatus.CANCELLED)) {
