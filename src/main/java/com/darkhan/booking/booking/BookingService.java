@@ -24,7 +24,7 @@ public class BookingService {
 
     @Transactional
     public Booking book(UUID seatId, String userId) {
-        Seat seat = seatRepository.findByIdForBooking(seatId)
+        Seat seat = seatRepository.findByIdForUpdate(seatId)
                 .orElseThrow(() -> new SeatNotFoundException(seatId));
 
         if(bookingRepository.existsBySeatIdAndStatusNot(seatId, BookingStatus.CANCELLED)) {
