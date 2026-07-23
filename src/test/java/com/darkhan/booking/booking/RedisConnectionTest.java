@@ -1,6 +1,7 @@
 package com.darkhan.booking.booking;
 
 import com.darkhan.booking.TestcontainersConfiguration;
+import com.darkhan.booking.hold.HoldService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -1,9 +1,15 @@
 package com.darkhan.booking.seat;
 
+import lombok.Getter;
+
 import java.util.UUID;
 
+@Getter
 public class SeatAlreadyBookedException extends RuntimeException {
-    public SeatAlreadyBookedException(UUID id) {
-        super("Seat with UUID: " + id + " has booking");
+    private final UUID seatId;
+
+    public SeatAlreadyBookedException(UUID seatId) {
+        super("Seat with UUID: " + seatId + " has booking");
+        this.seatId = seatId;
     }
 }

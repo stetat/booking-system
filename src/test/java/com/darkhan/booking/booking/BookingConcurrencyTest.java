@@ -3,8 +3,10 @@ package com.darkhan.booking.booking;
 import com.darkhan.booking.TestcontainersConfiguration;
 import com.darkhan.booking.event.Event;
 import com.darkhan.booking.event.EventRepository;
+import com.darkhan.booking.hold.HoldService;
 import com.darkhan.booking.seat.Seat;
 import com.darkhan.booking.seat.SeatAlreadyBookedException;
+import com.darkhan.booking.seat.SeatAlreadyHeldException;
 import com.darkhan.booking.seat.SeatRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 public class BookingConcurrencyTest {
+    @Autowired
+    HoldService holdService;
 
     @Autowired
     EventRepository eventRepository;
@@ -62,21 +66,26 @@ public class BookingConcurrencyTest {
         AtomicInteger dbViolation = new AtomicInteger();
         AtomicInteger other = new AtomicInteger();
         AtomicInteger optimisticFail = new AtomicInteger();
+        AtomicInteger alreadyHeld = new AtomicInteger();
 
         for(int i = 0; i < N; i++) {
             final int idx = i;
             pool.submit(() -> {
                 try {
                     startGate.await();
-                    Booking booking = bookingService.book(seat.getId(), "user-" + idx);
+
+                    holdService.hold(seat.getId(), "user-1");
+                    Booking booking = bookingService.book(seat.getId(), "user-1");
                     ok.incrementAndGet();
+                } catch (SeatAlreadyHeldException e) {
+                    alreadyHeld.incrementAndGet();
                 } catch (SeatAlreadyBookedException e) {
                     conflict.incrementAndGet();
                 } catch (DataIntegrityViolationException e) {
                     dbViolation.incrementAndGet();
                 }  catch (ObjectOptimisticLockingFailureException e) {
                     optimisticFail.incrementAndGet();
-                }  catch (Exception e) {
+                } catch (Exception e) {
                     other.incrementAndGet();
                     e.printStackTrace();
                 } finally {
@@ -94,6 +103,7 @@ public class BookingConcurrencyTest {
         System.out.println("db violations: " + dbViolation.get());
         System.out.println("optimistic lock exceptions: " + optimisticFail.get());
         System.out.println("seat already booked exceptions: " + conflict.get());
+        System.out.println("seat already held exceptions: " + alreadyHeld.get());
         System.out.println("others: " + other);
         System.out.println("\n------------------------------ ");
 
