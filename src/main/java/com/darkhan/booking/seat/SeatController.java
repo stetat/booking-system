@@ -2,6 +2,7 @@ package com.darkhan.booking.seat;
 
 import com.darkhan.booking.booking.BookingResponse;
 import com.darkhan.booking.booking.BookingService;
+import com.darkhan.booking.booking.SeatBookingService;
 import com.darkhan.booking.hold.HoldService;
 import com.darkhan.booking.booking.CreateBookingRequest;
 import lombok.AllArgsConstructor;
@@ -19,11 +20,12 @@ public class SeatController {
 
     private final SeatRepository seatRepository;
     private final BookingService bookingService;
+    private final SeatBookingService seatBookingService;
     private final HoldService holdService;
 
     @PostMapping("/seats/{seatId}/bookings")
     public BookingResponse createBookingBySeatId(@PathVariable UUID seatId, @RequestBody CreateBookingRequest request) {
-        return BookingResponse.from(bookingService.book(seatId, request.userId()));
+        return BookingResponse.from(seatBookingService.book(seatId, request.userId()));
     }
 
     @PostMapping("/seats/{seatId}/hold")
