@@ -35,6 +35,7 @@ public class HoldService {
         redisTemplate.delete("seat-hold:" + seatId);
     }
 
+
     public void assertHeldBy(UUID seatId, String userId) {
         String seatHolderId = redisTemplate.opsForValue()
                 .get("seat-hold:" + seatId);

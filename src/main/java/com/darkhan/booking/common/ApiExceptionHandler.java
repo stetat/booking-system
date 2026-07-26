@@ -1,5 +1,6 @@
 package com.darkhan.booking.common;
 
+import com.darkhan.booking.event.EventNotFoundException;
 import com.darkhan.booking.seat.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,12 @@ public class ApiExceptionHandler {
     public ResponseEntity<?> handle(SeatLockTimeoutException ex) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(Map.of("seatId", ex.getSeatId(), "error", "SEAT_LOCK_TIMEOUT"));
+    }
+
+    @ExceptionHandler(EventNotFoundException.class)
+    public ResponseEntity<?> handle(EventNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("eventId", ex.getEventId(), "error", "EVENT_NOT_FOUND"));
     }
 
 
