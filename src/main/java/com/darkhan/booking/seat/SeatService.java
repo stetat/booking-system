@@ -43,7 +43,7 @@ public class SeatService {
 
 
     public List<SeatResponse> getSeatMap(UUID eventId) {
-        String key = "seat-map:event:" + eventId;
+        String key = seatMapKey(eventId);
         String cached = redis.opsForValue().get(key);
 
         if(cached != null) {
@@ -63,6 +63,10 @@ public class SeatService {
         redis.opsForValue().set(key, json, Duration.ofMinutes(10));
 
         return seatMap;
+    }
+
+    public String seatMapKey(UUID eventId) {
+        return "seat-map:event:" + eventId;
     }
 
 }

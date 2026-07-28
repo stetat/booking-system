@@ -31,6 +31,7 @@ public class BookingService {
 
         Seat seat = seatRepository.findByIdForUpdate(seatId)
                 .orElseThrow(() -> new SeatNotFoundException(seatId));
+        UUID eventId = seat.getEvent().getId();
 
         if(bookingRepository.existsBySeatIdAndStatusNot(seatId, BookingStatus.CANCELLED)) {
             throw new SeatAlreadyBookedException(seatId);
@@ -39,7 +40,8 @@ public class BookingService {
         Booking booking = new Booking(userId, seat, BookingStatus.CONFIRMED);
         bookingRepository.save(booking);
 
-        eventPublisher.publishEvent(new BookingConfirmed(seat.getId()));
+
+        eventPublisher.publishEvent(new BookingConfirmed(eventId, seat.getId()));
 
 
         return booking;

@@ -1,8 +1,6 @@
-package com.darkhan.booking.hold;
+package com.darkhan.booking.seat;
 
 import com.darkhan.booking.booking.BookingConfirmed;
-import com.darkhan.booking.seat.SeatService;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -11,12 +9,14 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 @AllArgsConstructor
-public class HoldReleaseListener {
+public class SeatMapCacheEvictionListener {
 
-    private final HoldService holdService;
+    private final StringRedisTemplate redis;
+    private final SeatService seatService;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onBookingConfirmed(BookingConfirmed event) {
-        holdService.deleteHold(event.seatId());
+        String key = seatService.seatMapKey(event.eventId());
+        redis.delete(key);
     }
 }
