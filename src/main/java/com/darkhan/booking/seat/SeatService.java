@@ -65,7 +65,7 @@ public class SeatService {
         return seatMap;
     }
 
-    public String seatMapKey(UUID eventId) {
+    static String seatMapKey(UUID eventId) {
         return "seat-map:event:" + eventId;
     }
 

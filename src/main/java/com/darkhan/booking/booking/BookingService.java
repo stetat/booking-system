@@ -4,15 +4,12 @@ package com.darkhan.booking.booking;
 import com.darkhan.booking.hold.HoldService;
 import com.darkhan.booking.seat.*;
 
-import jakarta.persistence.LockModeType;
 import lombok.AllArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -38,11 +35,9 @@ public class BookingService {
         }
 
         Booking booking = new Booking(userId, seat, BookingStatus.CONFIRMED);
-        bookingRepository.save(booking);
+        bookingRepository.saveAndFlush(booking);
 
-
-        eventPublisher.publishEvent(new BookingConfirmed(eventId, seat.getId()));
-
+        eventPublisher.publishEvent(new BookingConfirmedMessage(booking.getId(), eventId, seatId, userId, seat.getLabel(), booking.getCreatedAt()));
 
         return booking;
     }
