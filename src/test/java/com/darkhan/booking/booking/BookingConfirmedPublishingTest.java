@@ -7,6 +7,7 @@ import com.darkhan.booking.hold.HoldService;
 import com.darkhan.booking.seat.Seat;
 import com.darkhan.booking.seat.SeatRepository;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,16 +15,22 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 
 
 @SpringBootTest(properties = { "spring.kafka.consumer.auto-offset-reset=earliest"})
@@ -54,10 +61,18 @@ public class BookingConfirmedPublishingTest {
     @Autowired
     ObjectMapper objectMapper;
 
+    @MockitoSpyBean
+    KafkaTemplate<String, String> kafkaTemplate;
+
     @TestConfiguration
     static class BookingConfirmedCollector {
-        final CountDownLatch latch = new CountDownLatch(1);
+        volatile CountDownLatch latch = new CountDownLatch(1);
         final ConcurrentLinkedQueue<String> payloads = new ConcurrentLinkedQueue<>();
+
+        void reset() {
+            latch = new CountDownLatch(1);
+            payloads.clear();
+        }
 
         @KafkaListener(topics = BookingTopics.BOOKING_CONFIRMED, groupId = "test-observer")
         void onBookingConfirmed(String payload) {
@@ -90,6 +105,37 @@ public class BookingConfirmedPublishingTest {
         assertThat(message.seatId()).isEqualTo(seat.getId());
         assertThat(message.userId()).isEqualTo("user-1");
         assertThat(message.bookingCreatedAt()).isNotNull();
+    }
+
+    @Test
+    void bookingCommitsButEventIsLostWhenPublishFails() throws InterruptedException {
+        doReturn(CompletableFuture.failedFuture(new RuntimeException("broker down")))
+                .when(kafkaTemplate)
+                .send(anyString(), anyString(), anyString());
+
+        Instant startsAt = LocalDateTime.of(2026, 9, 9, 13, 4)
+                .atZone(ZoneId.of("Asia/Almaty"))
+                .toInstant();
+
+        Event event = new Event("final", "ortalyq", startsAt);
+        eventRepository.save(event);
+
+        Seat seat = new Seat(event, "vip");
+        seatRepository.save(seat);
+
+        holdService.hold(seat.getId(), "user-1");
+        bookingService.book(seat.getId(), "user-1");
+
+        assertThat(bookingRepository.count()).isEqualTo(1);
+
+        boolean arrived = collector.latch.await(3, TimeUnit.SECONDS);
+        assertThat(arrived).isFalse();
+
+    }
+
+    @BeforeEach
+    void resetCollector() {
+        collector.reset();
     }
 
     @AfterEach
