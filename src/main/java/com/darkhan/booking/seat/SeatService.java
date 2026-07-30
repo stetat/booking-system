@@ -6,8 +6,6 @@ import com.darkhan.booking.booking.BookingStatus;
 import com.darkhan.booking.event.Event;
 import com.darkhan.booking.event.EventNotFoundException;
 import com.darkhan.booking.event.EventRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import lombok.AllArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;

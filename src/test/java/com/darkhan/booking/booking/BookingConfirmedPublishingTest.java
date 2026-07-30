@@ -11,13 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 import tools.jackson.databind.ObjectMapper;
-
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -31,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = { "spring.kafka.consumer.auto-offset-reset=earliest"})
 @Import(TestcontainersConfiguration.class)
-public class KafkaConsumerTest {
+public class BookingConfirmedPublishingTest {
 
     @Autowired
     EventRepository eventRepository;
@@ -70,7 +67,7 @@ public class KafkaConsumerTest {
     }
 
     @Test
-    void bookingConfirmedIsPublished() throws InterruptedException, JsonProcessingException {
+    void publishesMessageWhenBookingCommits() throws InterruptedException {
         Instant startsAt = LocalDateTime.of(2026, 9, 9, 13, 4)
                 .atZone(ZoneId.of("Asia/Almaty"))
                 .toInstant();

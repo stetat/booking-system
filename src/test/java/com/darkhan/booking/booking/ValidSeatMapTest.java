@@ -9,7 +9,6 @@ import com.darkhan.booking.seat.Seat;
 import com.darkhan.booking.seat.SeatRepository;
 import com.darkhan.booking.seat.SeatResponse;
 import com.darkhan.booking.seat.SeatService;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +21,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
