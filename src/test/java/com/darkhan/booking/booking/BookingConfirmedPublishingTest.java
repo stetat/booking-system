@@ -4,6 +4,7 @@ import com.darkhan.booking.TestcontainersConfiguration;
 import com.darkhan.booking.event.Event;
 import com.darkhan.booking.event.EventRepository;
 import com.darkhan.booking.hold.HoldService;
+import com.darkhan.booking.outbox.OutboxRepository;
 import com.darkhan.booking.seat.Seat;
 import com.darkhan.booking.seat.SeatRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -61,8 +62,13 @@ public class BookingConfirmedPublishingTest {
     @Autowired
     ObjectMapper objectMapper;
 
+    @Autowired
+    OutboxRepository outboxRepository;
+
     @MockitoSpyBean
     KafkaTemplate<String, String> kafkaTemplate;
+
+
 
     @TestConfiguration
     static class BookingConfirmedCollector {
@@ -99,9 +105,9 @@ public class BookingConfirmedPublishingTest {
         boolean arrived = collector.latch.await(10, TimeUnit.SECONDS);
 
         assertThat(arrived).isTrue();
+        assertThat(collector.payloads).hasSize(1);
         BookingConfirmedMessage message = objectMapper.readValue(collector.payloads.peek(), BookingConfirmedMessage.class);
 
-        assertThat(collector.payloads).hasSize(1);
         assertThat(message.seatId()).isEqualTo(seat.getId());
         assertThat(message.userId()).isEqualTo("user-1");
         assertThat(message.bookingCreatedAt()).isNotNull();
@@ -143,6 +149,7 @@ public class BookingConfirmedPublishingTest {
         bookingRepository.deleteAll();
         seatRepository.deleteAll();
         eventRepository.deleteAll();
+        outboxRepository.deleteAll();
         redis.getConnectionFactory().getConnection().serverCommands().flushDb();
     }
 }
