@@ -4,6 +4,7 @@ import com.darkhan.booking.TestcontainersConfiguration;
 import com.darkhan.booking.event.Event;
 import com.darkhan.booking.event.EventRepository;
 import com.darkhan.booking.hold.HoldService;
+import com.darkhan.booking.outbox.Outbox;
 import com.darkhan.booking.outbox.OutboxRepository;
 import com.darkhan.booking.seat.Seat;
 import com.darkhan.booking.seat.SeatRepository;
@@ -20,18 +21,20 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.*;
 
 
 @SpringBootTest(properties = { "spring.kafka.consumer.auto-offset-reset=earliest"})
@@ -48,6 +51,9 @@ public class BookingConfirmedPublishingTest {
     BookingRepository bookingRepository;
 
     @Autowired
+    OutboxRepository outboxRepository;
+
+    @Autowired
     StringRedisTemplate redis;
 
     @Autowired
@@ -61,9 +67,6 @@ public class BookingConfirmedPublishingTest {
 
     @Autowired
     ObjectMapper objectMapper;
-
-    @Autowired
-    OutboxRepository outboxRepository;
 
     @MockitoSpyBean
     KafkaTemplate<String, String> kafkaTemplate;
@@ -114,7 +117,7 @@ public class BookingConfirmedPublishingTest {
     }
 
     @Test
-    void bookingCommitsButEventIsLostWhenPublishFails() throws InterruptedException {
+    void eventSurvivesBrokerOutageAndPublishesOnRecovery() throws InterruptedException {
         doReturn(CompletableFuture.failedFuture(new RuntimeException("broker down")))
                 .when(kafkaTemplate)
                 .send(anyString(), anyString(), anyString());
@@ -133,9 +136,27 @@ public class BookingConfirmedPublishingTest {
         bookingService.book(seat.getId(), "user-1");
 
         assertThat(bookingRepository.count()).isEqualTo(1);
+        assertThat(outboxRepository.findAll().getFirst().getPublishedAt()).isNull();
 
         boolean arrived = collector.latch.await(3, TimeUnit.SECONDS);
         assertThat(arrived).isFalse();
+
+        // removing stub
+        doCallRealMethod().when(kafkaTemplate).send(anyString(), anyString(), anyString());
+
+        boolean recovered = collector.latch.await(10, TimeUnit.SECONDS);
+        assertThat(recovered).isTrue();
+
+        assertThat(collector.payloads).hasSize(1);
+        BookingConfirmedMessage payload = objectMapper.readValue(collector.payloads.peek(), BookingConfirmedMessage.class);
+        assertThat(payload.seatId()).isEqualTo(seat.getId());
+
+
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            List<Outbox> rows = outboxRepository.findAll();
+            assertThat(rows).hasSize(1);
+            assertThat(rows.getFirst().getPublishedAt()).isNotNull();
+        });
 
     }
 
