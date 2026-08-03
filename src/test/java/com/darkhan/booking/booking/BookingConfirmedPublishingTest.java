@@ -114,6 +114,7 @@ public class BookingConfirmedPublishingTest {
         assertThat(collector.payloads).hasSize(1);
         BookingConfirmedMessage message = objectMapper.readValue(collector.payloads.peek(), BookingConfirmedMessage.class);
 
+        assertThat(message.messageId()).isNotNull();
         assertThat(message.seatId()).isEqualTo(seat.getId());
         assertThat(message.userId()).isEqualTo("user-1");
         assertThat(message.bookingCreatedAt()).isNotNull();

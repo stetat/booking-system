@@ -40,7 +40,7 @@ public class BookingService {
         Booking booking = new Booking(userId, seat, BookingStatus.CONFIRMED);
         bookingRepository.saveAndFlush(booking);
 
-        BookingConfirmedMessage message = new BookingConfirmedMessage(booking.getId(), eventId, seatId, userId, seat.getLabel(), booking.getCreatedAt());
+        BookingConfirmedMessage message = new BookingConfirmedMessage(UUID.randomUUID(), booking.getId(), eventId, seatId, userId, seat.getLabel(), booking.getCreatedAt());
         outboxService.create(seatId, BookingTopics.BOOKING_CONFIRMED, message);
 
 
