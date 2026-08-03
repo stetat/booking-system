@@ -8,6 +8,8 @@ import com.darkhan.booking.outbox.Outbox;
 import com.darkhan.booking.outbox.OutboxRepository;
 import com.darkhan.booking.seat.Seat;
 import com.darkhan.booking.seat.SeatRepository;
+import jakarta.websocket.SendResult;
+import org.assertj.core.api.AtomicBooleanAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -157,8 +160,52 @@ public class BookingConfirmedPublishingTest {
             assertThat(rows).hasSize(1);
             assertThat(rows.getFirst().getPublishedAt()).isNotNull();
         });
+    }
+
+    @Test
+    void republishesEventWhenRelayCrashesAfterBrokerAck() {
+        AtomicBoolean firstCall = new AtomicBoolean(true);
+
+        doAnswer(invocation -> {
+            Object result = invocation.callRealMethod();
+            ((CompletableFuture<?>) result).join();
+
+            if (firstCall.compareAndSet(true, false)) {
+                throw new RuntimeException("relay crashed after ack");
+            }
+
+            return result;
+        })
+                .when(kafkaTemplate)
+                .send(anyString(), anyString(), anyString());
+
+        Instant startsAt = LocalDateTime.of(2026, 9, 9, 13, 4)
+                .atZone(ZoneId.of("Asia/Almaty"))
+                .toInstant();
+
+        Event event = new Event("final", "ortalyq", startsAt);
+        eventRepository.save(event);
+
+        Seat seat = new Seat(event, "vip");
+        seatRepository.save(seat);
+
+        holdService.hold(seat.getId(), "user-1");
+        bookingService.book(seat.getId(), "user-1");
+
+        await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
+            assertThat(collector.payloads).hasSize(2);
+        });
+
+        List<String> delivered = List.copyOf(collector.payloads);
+        assertThat(delivered.getFirst()).isEqualTo(delivered.getLast());
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            List<Outbox> rows = outboxRepository.findAll();
+//            assertThat(rows).hasSize(1);
+            assertThat(rows.getFirst().getPublishedAt()).isNotNull();
+        });
 
     }
+
 
     @BeforeEach
     void resetCollector() {
