@@ -15,11 +15,14 @@ public class NotificationService {
 
     private final InboxRepository inboxRepository;
     private final String consumerGroup;
+    private final NotificationSender notificationSender;
 
     public NotificationService(InboxRepository inboxRepository,
-                               @Value("${spring.kafka.consumer.group-id}") String consumerGroup) {
+                               @Value("${spring.kafka.consumer.group-id}") String consumerGroup, NotificationSender notificationSender) {
         this.inboxRepository = inboxRepository;
         this.consumerGroup = consumerGroup;
+        this.notificationSender = notificationSender;
+
     }
 
     @Transactional
@@ -31,7 +34,7 @@ public class NotificationService {
             return;
         }
 
-        log.info("Sending email to user with userId: {}\nBooking id: {}\nEvent id: {}\nSeat id: {}\nLabel: {}",
-                message.userId(), message.bookingId(), message.eventId(), message.seatId(), message.label());
+        notificationSender.send(message);
+
     }
 }
